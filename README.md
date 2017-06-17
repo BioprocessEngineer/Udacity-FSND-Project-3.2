@@ -27,4 +27,4 @@ Run python database_setup.py to initialize database for this catalog app.
 
 1.6 Run the app
 
-Run python project.py to start web app server. Navigate to localhost:5000 to visit the catalog.
+Run python project.py to start web app server. Navigate to localhost:5000 to visit the catalog. By using the app, you can create a list of universities and the countries they are located.
