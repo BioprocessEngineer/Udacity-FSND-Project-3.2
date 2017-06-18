@@ -6,6 +6,7 @@ from database_setup import Base, Country, University, User
 from flask import session as login_session
 import random
 import string
+from functools import wraps
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
@@ -26,6 +27,14 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+# Create decorator function to simply the verification of user login status
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in login_session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Create anti-forgery state token
 @app.route('/login')
@@ -205,9 +214,8 @@ def showCountries():
 
 # Create a new country
 @app.route('/country/new/', methods=['GET', 'POST'])
+@login_required
 def newCountry():
-    if 'username' not in login_session:
-        return redirect('/login')
     if request.method == 'POST':
         newCountry = Country(
             name=request.form['name'], user_id=login_session['user_id'])
@@ -220,13 +228,13 @@ def newCountry():
 
 # Edit a country
 @app.route('/country/<int:country_id>/edit/', methods=['GET', 'POST'])
+@login_required
 def editCountry(country_id):
     editedCountry = session.query(
         Country).filter_by(id=country_id).one()
-    if 'username' not in login_session:
-        return redirect('/login')
     if editedCountry.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to edit this country. Please create your own country in order to edit.');}</script><body onload='myFunction()''>"
+        return """<script>function myFunction() {alert('You are not authorized to edit this country. 
+        Please create your own country in order to edit.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
         if request.form['name']:
             editedCountry.name = request.form['name']
@@ -238,12 +246,12 @@ def editCountry(country_id):
 
 # Delete a country
 @app.route('/country/<int:country_id>/delete/', methods=['GET', 'POST'])
+@login_required
 def deleteCountry(country_id):
     countryToDelete = session.query(Country).filter_by(id=country_id).one()
-    if 'username' not in login_session:
-        return redirect('/login')
     if countryToDelete.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to delete this country. Please create your own country in order to delete.');}</script><body onload='myFunction()''>"
+        return """<script>function myFunction() {alert('You are not authorized to delete this country. 
+        Please create your own country in order to delete.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
         session.delete(countryToDelete)
         flash('%s Successfully Deleted' % countryToDelete.name)
@@ -275,11 +283,11 @@ def newUniversity(country_id):
     if login_session['user_id'] != country.user_id:
         return "<script>function myFunction() {alert('You are not authorized to add universities to this country. Please create your own country in order to add universities.');}</script><body onload='myFunction()''>"
     if request.method == 'POST':
-		newUni = University(name=request.form['name'], description=request.form['description'], country_id=country_id, user_id=country.user_id)
-		session.add(newUni)
-		session.commit()
-		flash('New University %s Successfully Created' % (newUni.name))
-		return redirect(url_for('showUniversities', country_id=country_id))
+        newUni = University(name=request.form['name'], description=request.form['description'], country_id=country_id, user_id=country.user_id)
+        session.add(newUni)
+        session.commit()
+        flash('New University %s Successfully Created' % (newUni.name))
+        return redirect(url_for('showUniversities', country_id=country_id))
     else:
         return render_template('newuniversity.html', country_id=country_id)
 
