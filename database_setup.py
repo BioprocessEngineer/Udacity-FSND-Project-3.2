@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import create_engine
 
 Base = declarative_base()
@@ -33,7 +33,7 @@ class Country(Base):
 
 
 class University(Base):
-    __tablename__ = 'menu_item'
+    __tablename__ = 'university'
 
     name = Column(String(80), nullable=False)
     id = Column(Integer, primary_key=True)
@@ -42,6 +42,7 @@ class University(Base):
     country = relationship(Country)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
+    country = relationship(Country, backref=backref('university', cascade='all, delete'))
 
     @property
     def serialize(self):
