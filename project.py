@@ -1,5 +1,6 @@
-#Import modules used in this application
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+# import modules used in this application
+from flask import Flask, render_template
+from flask import request, redirect, jsonify, url_for, flash
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Country, University, User
@@ -16,7 +17,8 @@ import requests
 
 app = Flask(__name__)
 
-CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
+CLIENT_ID = json.loads(open('client_secrets.json', 'r').
+                       read())['web']['client_id']
 APPLICATION_NAME = "Restaurant Menu Application"
 
 
@@ -95,11 +97,14 @@ def gconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    stored_credentials = login_session.get('credentials')
-    stored_gplus_id = login_session.get('gplus_id')
+    stored_credentials = login_session.get(
+        'credentials')
+    stored_gplus_id = login_session.get(
+        'gplus_id')
     if stored_credentials is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+        response = make_response(
+            json.dumps('Current user is already connected.'),
+             200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -132,7 +137,8 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += '<style = "width: 300px; height: 300px;border-radius: 150px;\
+    -webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % login_session['username'])
     print "done!"
     return output
@@ -233,8 +239,9 @@ def editCountry(country_id):
     editedCountry = session.query(
         Country).filter_by(id=country_id).one()
     if editedCountry.user_id != login_session['user_id']:
-        return """<script>function myFunction() {alert('You are not authorized to edit this country. 
-        Please create your own country in order to edit.');}</script><body onload='myFunction()''>"""
+        return """<script>function myFunction() {alert('You are not authorized to 
+        edit this country.Please create your own country in order to edit.');}
+        </script><body onload='myFunction()''>"""
     if request.method == 'POST':
         if request.form['name']:
             editedCountry.name = request.form['name']
@@ -250,8 +257,10 @@ def editCountry(country_id):
 def deleteCountry(country_id):
     countryToDelete = session.query(Country).filter_by(id=country_id).one()
     if countryToDelete.user_id != login_session['user_id']:
-        return """<script>function myFunction() {alert('You are not authorized to delete this country. 
-        Please create your own country in order to delete.');}</script><body onload='myFunction()''>"""
+        return """<script>function myFunction()
+        {alert('You are not authorized to delete this country. 
+        Please create your own country in order to delete.');}
+        </script><body onload='myFunction()''>"""
     if request.method == 'POST':
         session.delete(countryToDelete)
         flash('%s Successfully Deleted' % countryToDelete.name)
@@ -268,22 +277,31 @@ def showUniversities(country_id):
     creator = getUserInfo(country.user_id)
     schools = session.query(University).filter_by(
         country_id=country_id).all()
-    if 'username' not in login_session or creator.id != login_session['user_id']:
-        return render_template('publicuniversity.html', schools=schools, country=country, creator=creator)
+    if 'username' not in login_session or\
+     creator.id != login_session['user_id']:
+        return render_template('publicuniversity.html', 
+        schools=schools, country=country, creator=creator)
     else:
-        return render_template('university.html', schools=schools, country=country, creator=creator)
+        return render_template('university.html', schools=schools, 
+                               country=country, creator=creator)
 
 
 # Create a new university
-@app.route('/country/<int:country_id>/university/new/', methods=['GET', 'POST'])
+@app.route('/country/<int:country_id>/university/new/', 
+           methods=['GET', 'POST'])
 def newUniversity(country_id):
     if 'username' not in login_session:
         return redirect('/login')
     country = session.query(Country).filter_by(id=country_id).one()
     if login_session['user_id'] != country.user_id:
-        return "<script>function myFunction() {alert('You are not authorized to add universities to this country. Please create your own country in order to add universities.');}</script><body onload='myFunction()''>"
+        return """<script>function myFunction() {alert
+        ('You are not authorized to add universities to this country. 
+        Please create your own country in order to add universities.');}
+        </script><body onload='myFunction()''>"""
     if request.method == 'POST':
-        newUni = University(name=request.form['name'], description=request.form['description'], country_id=country_id, user_id=country.user_id)
+        newUni = University(name=request.form['name'], 
+                            description=request.form['description'], 
+                            country_id=country_id, user_id=country.user_id)
         session.add(newUni)
         session.commit()
         flash('New University %s Successfully Created' % (newUni.name))
@@ -292,14 +310,18 @@ def newUniversity(country_id):
         return render_template('newuniversity.html', country_id=country_id)
 
 # Edit a university
-@app.route('/country/<int:country_id>/university/<int:university_id>/edit', methods=['GET', 'POST'])
+@app.route('/country/<int:country_id>/university/<int:university_id>/edit', 
+           methods=['GET', 'POST'])
 def editUniversity(country_id, university_id):
     if 'username' not in login_session:
         return redirect('/login')
     editedUni = session.query(University).filter_by(id=university_id).one()
     country = session.query(Country).filter_by(id=country_id).one()
     if login_session['user_id'] != country.user_id:
-        return "<script>function myFunction() {alert('You are not authorized to edit universities to this country. Please create your own country in order to edit universities.');}</script><body onload='myFunction()''>"
+        return """<script>function myFunction() 
+        {alert('You are not authorized to edit universities to this country. 
+        Please create your own country in order to edit universities.');}
+        </script><body onload='myFunction()''>"""
     if request.method == 'POST':
         if request.form['name']:
             editedUni.name = request.form['name']
@@ -310,25 +332,31 @@ def editUniversity(country_id, university_id):
         flash('University Successfully Edited')
         return redirect(url_for('showUniversities', country_id=country_id))
     else:
-        return render_template('edituniversity.html', country_id=country_id, university_id=university_id, uni=editedUni)
+        return render_template('edituniversity.html', country_id=country_id, 
+                               university_id=university_id, uni=editedUni)
 
 
 # Delete a university
-@app.route('/country/<int:country_id>/university/<int:university_id>/delete', methods=['GET', 'POST'])
+@app.route('/country/<int:country_id>/university/<int:university_id>/delete', 
+           methods=['GET', 'POST'])
 def deleteUniversity(country_id, university_id):
     if 'username' not in login_session:
         return redirect('/login')
     country = session.query(Country).filter_by(id=country_id).one()
     uniToDelete = session.query(University).filter_by(id=university_id).one()
     if login_session['user_id'] != country.user_id:
-        return "<script>function myFunction() {alert('You are not authorized to delete universities to this country. Please create your own country in order to delete universities.');}</script><body onload='myFunction()''>"
+        return """"<script>function myFunction() 
+        {alert('You are not authorized to delete universities to this country. 
+        Please create your own country in order to delete universities.');}
+        </script><body onload='myFunction()''>"""
     if request.method == 'POST':
         session.delete(uniToDelete)
         session.commit()
         flash('University Successfully Deleted')
         return redirect(url_for('showUniversities', country_id=country_id))
     else:
-        return render_template('deleteUniversity.html', country_id = country_id, uni=uniToDelete)
+        return render_template('deleteUniversity.html', 
+        country_id = country_id, uni=uniToDelete)
 
 
 # Disconnect based on provider
