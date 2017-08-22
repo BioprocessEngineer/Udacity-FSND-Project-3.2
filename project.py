@@ -3,6 +3,7 @@ from flask import Flask, render_template
 from flask import request, redirect, jsonify, url_for, flash
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import scoped_session
 from database_setup import Base, Country, University, User
 from flask import session as login_session
 import random
@@ -26,8 +27,7 @@ APPLICATION_NAME = "Restaurant Menu Application"
 engine = create_engine('sqlite:///countryuniversitywithusers.db')
 Base.metadata.bind = engine
 
-DBSession = sessionmaker(bind=engine)
-session = DBSession()
+session = scoped_session(sessionmaker(bind=engine))
 
 # Create decorator function to simply the verification of user login status
 def login_required(f):
@@ -230,7 +230,7 @@ def newCountry():
         session.commit()
         return redirect(url_for('showCountries'))
     else:
-        return render_template('newCountry.html')
+        return render_template('newcountry.html')
 
 # Edit a country
 @app.route('/country/<int:country_id>/edit/', methods=['GET', 'POST'])
@@ -355,7 +355,7 @@ def deleteUniversity(country_id, university_id):
         flash('University Successfully Deleted')
         return redirect(url_for('showUniversities', country_id=country_id))
     else:
-        return render_template('deleteUniversity.html', 
+        return render_template('deleteuniversity.html', 
         country_id = country_id, uni=uniToDelete)
 
 
@@ -381,8 +381,8 @@ def disconnect():
         flash("You were not logged in")
         return redirect(url_for('showCountries'))
 
+app.secret_key = 'super_secret_key'
 
 if __name__ == '__main__':
-    app.secret_key = 'super_secret_key'
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+
